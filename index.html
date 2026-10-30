@@ -73,8 +73,13 @@ function explain(e) {
   return e.message;
 }
 
+// ngrok shows a warning page to browsers; this header skips it (only added for ngrok links)
+function extra() {
+  return /ngrok/i.test(urlBox.value) ? { 'ngrok-skip-browser-warning': 'true' } : {};
+}
+
 async function getModel() {
-  const r = await fetch(apiBase() + '/models');
+  const r = await fetch(apiBase() + '/models', { headers: extra() });
   if (!r.ok) throw new Error('Server answered with HTTP ' + r.status);
   const j = await r.json();
   if (!j.data || !j.data.length) throw new Error('No model is loaded in LM Studio. Load one first.');
@@ -106,7 +111,7 @@ async function send() {
     const model = await getModel();
     const r = await fetch(apiBase() + '/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: Object.assign({ 'Content-Type': 'application/json' }, extra()),
       body: JSON.stringify({ model, messages: history, stream: true })
     });
     if (!r.ok) throw new Error('HTTP ' + r.status + ': ' + (await r.text()).slice(0, 200));
